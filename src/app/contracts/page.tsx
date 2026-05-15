@@ -301,7 +301,12 @@ export default function ContractsPage() {
         )}
 
         {minting && pendingTxHash && (
-          <Alert color="blue" mb="lg" radius="md" title="Transaction submitted!">
+          <Alert
+            color="blue"
+            mb="lg"
+            radius="md"
+            title="Transaction submitted!"
+          >
             <Group gap="xs">
               <Loader size="xs" color="blue" />
               <Text size="sm">Waiting for confirmation on Sepolia…</Text>
