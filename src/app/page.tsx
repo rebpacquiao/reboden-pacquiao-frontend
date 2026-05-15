@@ -14,6 +14,8 @@ import {
   IconAlertCircle,
   IconWallet,
   IconCurrencyEthereum,
+  IconDownload,
+  IconRefresh,
 } from "@tabler/icons-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -28,6 +30,7 @@ export default function Home() {
     transactions,
     loading,
     error,
+    noWallet,
     connect,
     disconnect,
     clearError,
@@ -57,7 +60,43 @@ export default function Home() {
           </Alert>
         )}
 
-        {!address ? (
+        {noWallet ? (
+          <Center style={{ minHeight: "60vh" }}>
+            <Stack align="center" gap="lg">
+              <ThemeIcon size={96} radius="xl" color="orange" variant="light">
+                <IconWallet size={52} />
+              </ThemeIcon>
+              <Stack align="center" gap="xs">
+                <Title order={2}>No Wallet Detected</Title>
+                <Text c="dimmed" ta="center" maw={400}>
+                  You need MetaMask to use this app. Install it, then refresh
+                  the page.
+                </Text>
+              </Stack>
+              <Stack align="center" gap="sm">
+                <Button
+                  component="a"
+                  href="https://metamask.io/download/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  leftSection={<IconDownload size={16} />}
+                  size="lg"
+                  variant="gradient"
+                  gradient={{ from: "orange", to: "yellow" }}
+                >
+                  Install MetaMask
+                </Button>
+                <Button
+                  variant="subtle"
+                  leftSection={<IconRefresh size={16} />}
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh after install
+                </Button>
+              </Stack>
+            </Stack>
+          </Center>
+        ) : !address ? (
           <Center style={{ minHeight: "60vh" }}>
             <Stack align="center" gap="lg">
               <ThemeIcon
