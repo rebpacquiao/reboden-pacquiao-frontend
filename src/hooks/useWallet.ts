@@ -57,7 +57,14 @@ export const useWallet = () => {
         );
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Wallet connection failed.");
+      const code = (e as { code?: string | number })?.code;
+      if (code === 4001 || code === "ACTION_REJECTED") {
+        setError(
+          "Connection rejected. Please approve the MetaMask prompt to connect your wallet.",
+        );
+      } else {
+        setError(e instanceof Error ? e.message : "Wallet connection failed.");
+      }
     } finally {
       setLoading(false);
     }
