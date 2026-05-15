@@ -76,7 +76,6 @@ export const useWallet = () => {
   // Auto-detect already-connected wallet on mount (no popup)
   useEffect(() => {
     if (!window.ethereum) return;
-    setNoWallet(false);
     (async () => {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum!);
