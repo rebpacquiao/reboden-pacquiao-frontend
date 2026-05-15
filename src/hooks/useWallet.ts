@@ -27,8 +27,15 @@ const fetchTransactions = async (address: string): Promise<Transaction[]> => {
 
 export const useWallet = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { address, balance, transactions, loading, error, noWallet, manuallyDisconnected } =
-    useSelector((state: RootState) => state.wallet);
+  const {
+    address,
+    balance,
+    transactions,
+    loading,
+    error,
+    noWallet,
+    manuallyDisconnected,
+  } = useSelector((state: RootState) => state.wallet);
 
   const connect = useCallback(async () => {
     if (!window.ethereum) {
@@ -120,7 +127,7 @@ export const useWallet = () => {
         // silent — don't show errors on auto-detect
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

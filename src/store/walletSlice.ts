@@ -30,7 +30,7 @@ const walletSlice = createSlice({
     },
     setConnected(
       state,
-      action: PayloadAction<{ address: string; balance: string }>
+      action: PayloadAction<{ address: string; balance: string }>,
     ) {
       state.address = action.payload.address;
       state.balance = action.payload.balance;
