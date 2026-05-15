@@ -13,6 +13,7 @@ import storage from "redux-persist/lib/storage";
 import walletReducer from "./walletSlice";
 import tokenReducer from "./tokenSlice";
 import portfolioReducer from "./portfolioSlice";
+import contractReducer from "./contractSlice";
 
 const walletPersistConfig = {
   key: "wallet",
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   wallet: persistReducer(walletPersistConfig, walletReducer),
   tokens: tokenReducer,
   portfolio: portfolioReducer,
+  contract: contractReducer,
 });
 
 export const store = configureStore({

@@ -18,6 +18,7 @@ import {
   IconSearch,
   IconCoin,
   IconChartPie,
+  IconCode,
 } from "@tabler/icons-react";
 import { useRouter, usePathname } from "next/navigation";
 import { shorten } from "@/lib/utils";
@@ -173,6 +174,14 @@ export default function Header({
             leftSection={<IconChartPie size={16} />}
             active={pathname === "/portfolio"}
             onClick={() => navigate("/portfolio")}
+            styles={{ root: { borderRadius: 8 } }}
+          />
+          <NavLink
+            label="Contracts"
+            description="ERC-721 NFT minting"
+            leftSection={<IconCode size={16} />}
+            active={pathname === "/contracts"}
+            onClick={() => navigate("/contracts")}
             styles={{ root: { borderRadius: 8 } }}
           />
           <Divider my="sm" />
