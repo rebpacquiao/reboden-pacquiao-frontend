@@ -16,7 +16,8 @@ import {
   IconCurrencyEthereum,
   IconHome,
   IconSearch,
-  IconChartBar,
+  IconCoin,
+  IconChartPie,
 } from "@tabler/icons-react";
 import { useRouter, usePathname } from "next/navigation";
 import { shorten } from "@/lib/utils";
@@ -152,23 +153,32 @@ export default function Header({
           />
           <NavLink
             label="Explorer"
-            description="Live blockchain data table"
+            description="Live blockchain data"
             leftSection={<IconSearch size={16} />}
             active={pathname === "/explorer"}
             onClick={() => navigate("/explorer")}
+            styles={{ root: { borderRadius: 8 } }}
+          />
+          <NavLink
+            label="Tokens"
+            description="ERC-20 token balances"
+            leftSection={<IconCoin size={16} />}
+            active={pathname === "/tokens"}
+            onClick={() => navigate("/tokens")}
+            styles={{ root: { borderRadius: 8 } }}
+          />
+          <NavLink
+            label="Portfolio"
+            description="Aggregate asset overview"
+            leftSection={<IconChartPie size={16} />}
+            active={pathname === "/portfolio"}
+            onClick={() => navigate("/portfolio")}
             styles={{ root: { borderRadius: 8 } }}
           />
           <Divider my="sm" />
           <Text size="xs" fw={600} c="dimmed" tt="uppercase" px="sm">
             Analytics
           </Text>
-          <NavLink
-            label="Network Stats"
-            leftSection={<IconChartBar size={16} />}
-            disabled
-            description="Coming soon"
-            styles={{ root: { borderRadius: 8 } }}
-          />
         </Stack>
       </Drawer>
     </>

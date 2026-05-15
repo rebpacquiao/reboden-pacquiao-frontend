@@ -97,17 +97,23 @@ export const useWallet = () => {
     dispatch(walletActions.clearError());
   }, [dispatch]);
 
-  // Auto-detect already-connected wallet on mount (no popup).
-  // Skip if: already connected via Redux, OR user explicitly disconnected this session.
+  // On mount: if Redux has a persisted address, refresh the live balance silently.
+  // If no persisted address and not manually disconnected, run auto-detection.
   useEffect(() => {
-    if (address) return;
-    if (manuallyDisconnected) return;
     if (!window.ethereum) return;
+    if (manuallyDisconnected) return;
+
     (async () => {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum!);
+        // Use persisted address if available, otherwise detect from MetaMask
+        const target = address ?? (() => null)();
         const accounts: string[] = await provider.send("eth_accounts", []);
-        if (!accounts.length) return;
+        if (!accounts.length) {
+          // MetaMask no longer has this account — clear stale persisted state
+          if (address) dispatch(walletActions.disconnect());
+          return;
+        }
         const addr = accounts[0];
         const bal = await provider.getBalance(addr);
         dispatch(
@@ -116,15 +122,17 @@ export const useWallet = () => {
             balance: ethers.formatEther(bal),
           }),
         );
-        try {
-          dispatch(
-            walletActions.setTransactions(await fetchTransactions(addr)),
-          );
-        } catch {
-          // silent
+        if (!target) {
+          try {
+            dispatch(
+              walletActions.setTransactions(await fetchTransactions(addr)),
+            );
+          } catch {
+            // silent
+          }
         }
       } catch {
-        // silent — don't show errors on auto-detect
+        // silent
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
