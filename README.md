@@ -50,28 +50,6 @@ App runs at **http://localhost:3000**
 
 ---
 
-## Environment Variables
-
-Create `.env.development` in `front-end/crypto-project/`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:4000
-NEXT_PUBLIC_CONTRACT_ADDRESS=0x81E023EE4aB728BA0782A0aD8290258021Ad0A71
-NEXT_PUBLIC_ETHERSCAN_API=https://api.etherscan.io/v2/api
-NEXT_PUBLIC_ETHERSCAN_API_KEY=your_etherscan_key_here
-```
-
-| Variable                        | Description                                 |
-| ------------------------------- | ------------------------------------------- |
-| `NEXT_PUBLIC_API_URL`           | Base URL of the backend API                 |
-| `NEXT_PUBLIC_CONTRACT_ADDRESS`  | Deployed CryptoWalletNFT contract (Sepolia) |
-| `NEXT_PUBLIC_ETHERSCAN_API`     | Etherscan v2 API base URL                   |
-| `NEXT_PUBLIC_ETHERSCAN_API_KEY` | Your Etherscan API key                      |
-
-> All `NEXT_PUBLIC_*` variables are **baked into the build at compile time**. Changing them after `npm run build` has no effect — you must rebuild.
-
----
-
 ## Available Scripts
 
 ```bash
@@ -101,13 +79,7 @@ Frontend is available at **http://localhost:3000**
 
 ```bash
 # From front-end/crypto-project/
-docker build \
-  --build-arg NEXT_PUBLIC_API_URL=http://localhost:4000 \
-  --build-arg NEXT_PUBLIC_CONTRACT_ADDRESS=0x81E023EE4aB728BA0782A0aD8290258021Ad0A71 \
-  --build-arg NEXT_PUBLIC_ETHERSCAN_API=https://api.etherscan.io/v2/api \
-  --build-arg NEXT_PUBLIC_ETHERSCAN_API_KEY=your_key \
-  -t crypto-frontend .
-
+docker build
 docker run -p 3000:3000 crypto-frontend
 ```
 
