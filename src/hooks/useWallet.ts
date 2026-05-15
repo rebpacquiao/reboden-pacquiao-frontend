@@ -8,7 +8,7 @@ const ETHERSCAN_API =
 const API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY ?? "";
 
 const fetchTransactions = async (address: string): Promise<Transaction[]> => {
-  const url = `${ETHERSCAN_API}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${API_KEY}`;
+  const url = `${ETHERSCAN_API}?chainid=1&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${API_KEY}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Network error: ${res.status}`);
   const data = await res.json();
