@@ -1,6 +1,9 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { ethers } from "ethers";
+import type { RootState, AppDispatch } from "@/store";
+import { walletActions } from "@/store/walletSlice";
 import type { Transaction } from "@/types";
 
 const ETHERSCAN_API =
@@ -23,82 +26,116 @@ const fetchTransactions = async (address: string): Promise<Transaction[]> => {
 };
 
 export const useWallet = () => {
-  const [address, setAddress] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [noWallet, setNoWallet] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const {
+    address,
+    balance,
+    transactions,
+    loading,
+    error,
+    noWallet,
+    manuallyDisconnected,
+  } = useSelector((state: RootState) => state.wallet);
 
   const connect = useCallback(async () => {
     if (!window.ethereum) {
-      setNoWallet(true);
+      dispatch(walletActions.setNoWallet(true));
       return;
     }
-    setNoWallet(false);
-    setLoading(true);
-    setError(null);
+    dispatch(walletActions.setNoWallet(false));
+    dispatch(walletActions.setLoading(true));
+    dispatch(walletActions.setError(null));
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
       const addr: string = accounts[0];
       const bal = await provider.getBalance(addr);
-      setAddress(addr);
-      setBalance(ethers.formatEther(bal));
+      dispatch(
+        walletActions.setConnected({
+          address: addr,
+          balance: ethers.formatEther(bal),
+        }),
+      );
 
       try {
-        setTransactions(await fetchTransactions(addr));
+        dispatch(walletActions.setTransactions(await fetchTransactions(addr)));
       } catch (txErr: unknown) {
-        setTransactions([]);
-        setError(
-          txErr instanceof Error
-            ? txErr.message
-            : "Failed to fetch transactions.",
-        );
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Wallet connection failed.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const disconnect = useCallback(() => {
-    setAddress(null);
-    setBalance(null);
-    setTransactions([]);
-    setError(null);
-    setNoWallet(false);
-  }, []);
-
-  const clearError = useCallback(() => setError(null), []);
-
-  // Auto-detect already-connected wallet on mount (no popup)
-  useEffect(() => {
-    if (!window.ethereum) return;
-    (async () => {
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum!);
-        const accounts: string[] = await provider.send("eth_accounts", []);
-        if (!accounts.length) return;
-        const addr = accounts[0];
-        const bal = await provider.getBalance(addr);
-        setAddress(addr);
-        setBalance(ethers.formatEther(bal));
-        try {
-          setTransactions(await fetchTransactions(addr));
-        } catch (txErr: unknown) {
-          setTransactions([]);
-          setError(
+        dispatch(walletActions.setTransactions([]));
+        dispatch(
+          walletActions.setError(
             txErr instanceof Error
               ? txErr.message
               : "Failed to fetch transactions.",
-          );
+          ),
+        );
+      }
+    } catch (e: unknown) {
+      const code = (e as { code?: string | number })?.code;
+      if (code === 4001 || code === "ACTION_REJECTED") {
+        dispatch(
+          walletActions.setError(
+            "Connection rejected. Please approve the MetaMask prompt to connect your wallet.",
+          ),
+        );
+      } else {
+        dispatch(
+          walletActions.setError(
+            e instanceof Error ? e.message : "Wallet connection failed.",
+          ),
+        );
+      }
+    } finally {
+      dispatch(walletActions.setLoading(false));
+    }
+  }, [dispatch]);
+
+  const disconnect = useCallback(() => {
+    dispatch(walletActions.disconnect());
+  }, [dispatch]);
+
+  const clearError = useCallback(() => {
+    dispatch(walletActions.clearError());
+  }, [dispatch]);
+
+  // On mount: if Redux has a persisted address, refresh the live balance silently.
+  // If no persisted address and not manually disconnected, run auto-detection.
+  useEffect(() => {
+    if (!window.ethereum) return;
+    if (manuallyDisconnected) return;
+
+    (async () => {
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum!);
+        // Use persisted address if available, otherwise detect from MetaMask
+        const target = address ?? (() => null)();
+        const accounts: string[] = await provider.send("eth_accounts", []);
+        if (!accounts.length) {
+          // MetaMask no longer has this account — clear stale persisted state
+          if (address) dispatch(walletActions.disconnect());
+          return;
+        }
+        const addr = accounts[0];
+        const bal = await provider.getBalance(addr);
+        dispatch(
+          walletActions.setConnected({
+            address: addr,
+            balance: ethers.formatEther(bal),
+          }),
+        );
+        if (!target) {
+          try {
+            dispatch(
+              walletActions.setTransactions(await fetchTransactions(addr)),
+            );
+          } catch {
+            // silent
+          }
         }
       } catch {
-        // silent — don't show errors on auto-detect
+        // silent
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
