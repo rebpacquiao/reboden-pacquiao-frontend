@@ -32,6 +32,7 @@ interface ContractState {
   history: MintRecord[];
   historyLoading: boolean;
   minting: boolean;
+  pendingTxHash: string | null;
   mintTxHash: string | null;
   mintTokenId: string | null;
   loading: boolean;
@@ -44,6 +45,7 @@ const initialState: ContractState = {
   history: [],
   historyLoading: false,
   minting: false,
+  pendingTxHash: null,
   mintTxHash: null,
   mintTokenId: null,
   loading: false,
@@ -120,19 +122,25 @@ const contractSlice = createSlice({
     setMinting(state) {
       state.minting = true;
       state.error = null;
+      state.pendingTxHash = null;
       state.mintTxHash = null;
       state.mintTokenId = null;
+    },
+    setPendingTx(state, action: PayloadAction<string>) {
+      state.pendingTxHash = action.payload;
     },
     setMintSuccess(
       state,
       action: PayloadAction<{ txHash: string; tokenId: string }>,
     ) {
       state.minting = false;
+      state.pendingTxHash = null;
       state.mintTxHash = action.payload.txHash;
       state.mintTokenId = action.payload.tokenId;
     },
     setMintError(state, action: PayloadAction<string>) {
       state.minting = false;
+      state.pendingTxHash = null;
       state.error = action.payload;
     },
     clearError(state) {
@@ -140,6 +148,7 @@ const contractSlice = createSlice({
     },
     resetMint(state) {
       state.minting = false;
+      state.pendingTxHash = null;
       state.mintTxHash = null;
       state.mintTokenId = null;
       state.error = null;

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Container,
@@ -101,6 +101,7 @@ export default function ContractsPage() {
     history,
     historyLoading,
     minting,
+    pendingTxHash,
     mintTxHash,
     mintTokenId,
     loading,
@@ -110,6 +111,7 @@ export default function ContractsPage() {
   const [tokenDesc, setTokenDesc] = useState("");
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const mintingRef = useRef(false);
   const deployed = isContractDeployed();
 
   const load = useCallback(() => {
@@ -143,18 +145,20 @@ export default function ContractsPage() {
   }
 
   async function mint() {
-    if (!walletAddress || !tokenName.trim()) return;
-    if (!deployed) return;
+    if (mintingRef.current || !walletAddress || !tokenName.trim() || !deployed)
+      return;
+    mintingRef.current = true;
     setNetworkError(null);
     dispatch(contractActions.setMinting());
     try {
       const ethereum = (window as unknown as { ethereum?: object }).ethereum;
       if (!ethereum) throw new Error("MetaMask not detected");
-      const provider = new ethers.BrowserProvider(
-        ethereum as ethers.Eip1193Provider,
-      );
-      const network = await provider.getNetwork();
-      if (network.chainId !== BigInt(11155111)) {
+
+      // Switch to Sepolia before creating the provider so it's always on the right network
+      const chainIdHex = await (
+        ethereum as { request: (a: unknown) => Promise<string> }
+      ).request({ method: "eth_chainId" });
+      if (chainIdHex !== SEPOLIA_CHAIN_ID) {
         const switched = await switchToSepolia();
         if (!switched) {
           dispatch(
@@ -165,6 +169,11 @@ export default function ContractsPage() {
           return;
         }
       }
+
+      // Create provider AFTER ensuring correct network
+      const provider = new ethers.BrowserProvider(
+        ethereum as ethers.Eip1193Provider,
+      );
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(
         CONTRACT_ADDRESS,
@@ -183,10 +192,14 @@ export default function ContractsPage() {
           uri: string,
         ) => Promise<ethers.ContractTransactionResponse>
       )(tokenURI);
+
+      // Show tx hash immediately — before waiting for confirmation
+      dispatch(contractActions.setPendingTx(tx.hash));
+
       const receipt = await tx.wait();
       const tokenId =
         receipt?.logs
-          .filter((l): l is ethers.EventLog => "args" in l)
+          ?.filter((l): l is ethers.EventLog => "args" in l)
           .find((l) => l.fragment?.name === "Minted")
           ?.args?.[1]?.toString() ?? "?";
       dispatch(
@@ -210,6 +223,8 @@ export default function ContractsPage() {
       dispatch(fetchContractInfo({ apiBase: API_BASE }));
     } catch (err) {
       dispatch(contractActions.setMintError(parseContractError(err)));
+    } finally {
+      mintingRef.current = false;
     }
   }
 
@@ -282,6 +297,22 @@ export default function ContractsPage() {
             onClose={() => dispatch(contractActions.clearError())}
           >
             {error}
+          </Alert>
+        )}
+
+        {minting && pendingTxHash && (
+          <Alert color="blue" mb="lg" radius="md" title="Transaction submitted!">
+            <Group gap="xs">
+              <Loader size="xs" color="blue" />
+              <Text size="sm">Waiting for confirmation on Sepolia…</Text>
+              <Anchor
+                href={`https://sepolia.etherscan.io/tx/${pendingTxHash}`}
+                target="_blank"
+                size="sm"
+              >
+                View on Etherscan <IconExternalLink size={12} />
+              </Anchor>
+            </Group>
           </Alert>
         )}
 
